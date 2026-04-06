@@ -1,17 +1,15 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Home from './pages/Home'
-import WynajemEdwarda from './pages/WynajemEdwarda'
-import WynajemRobotow from './pages/WynajemRobotow'
-import PromocjaSocialMedia from './pages/PromocjaSocialMedia'
+import RobotDetail from './pages/RobotDetail'
+import KupujeRobota from './pages/KupujeRobota'
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/wynajem-edwarda" element={<WynajemEdwarda />} />
-        <Route path="/wynajem-robotow" element={<WynajemRobotow />} />
-        <Route path="/promocja-social-media" element={<PromocjaSocialMedia />} />
+        <Route path="/robot/:id" element={<RobotDetail />} />
+        <Route path="/kupuje-robota" element={<KupujeRobota />} />
       </Routes>
     </BrowserRouter>
   )

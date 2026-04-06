@@ -1,31 +1,25 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
 import { Link, useLocation } from 'react-router-dom'
+import { Bot } from 'lucide-react'
+import { theme } from '../theme'
 import useIsMobile from '../hooks/useIsMobile'
-
-const navLinks = [
-  { label: 'O mnie', href: '/#o-mnie' },
-  { label: 'Moje życie', href: '/#timeline' },
-  { label: 'Sociale', href: '/#sociale' },
-  { label: 'Media', href: '/#media' },
-  { label: 'Współpraca', href: '/#uslugi' },
-  { label: 'Kontakt', href: '/#kontakt' },
-]
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const m = useIsMobile()
   const location = useLocation()
   const isHome = location.pathname === '/'
-  const isMobile = useIsMobile()
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40)
+    const onScroll = () => setScrolled(window.scrollY > 20)
     window.addEventListener('scroll', onScroll)
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  useEffect(() => { setMenuOpen(false) }, [location])
+  useEffect(() => {
+    setMenuOpen(false)
+  }, [location])
 
   const handleNavClick = (href: string) => {
     setMenuOpen(false)
@@ -35,30 +29,34 @@ export default function Navbar() {
     }
   }
 
-  const linkStyle = {
-    fontSize: isMobile ? 16 : 13,
-    fontWeight: 500,
-    letterSpacing: '0.05em',
-    textTransform: 'uppercase' as const,
-    color: 'rgba(255,255,255,0.45)',
-    transition: 'color 0.2s ease',
-  }
+  const onHero = isHome && !scrolled && !menuOpen
+  const textColor = onHero ? '#fff' : theme.colors.text
+  const linkColor = onHero ? 'rgba(255,255,255,0.7)' : theme.colors.textSecondary
+  const linkHover = onHero ? '#fff' : theme.colors.text
+  const hamburgerColor = onHero ? '#fff' : theme.colors.text
+
+  const navLinks = [
+    { label: 'Roboty', href: '/#roboty' },
+    { label: 'Finansowanie', href: '/kupuje-robota' },
+    { label: 'FAQ', href: '/#faq' },
+  ]
 
   return (
-    <motion.nav
-      initial={{ y: -80 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.6, ease: 'easeOut' as const }}
+    <nav
       style={{
         position: 'fixed',
         top: 0,
         left: 0,
         right: 0,
         zIndex: 1000,
-        transition: 'background 0.3s ease',
-        background: scrolled || menuOpen ? 'rgba(0,0,0,0.95)' : 'transparent',
-        backdropFilter: scrolled || menuOpen ? 'blur(20px)' : 'none',
-        borderBottom: scrolled ? '1px solid rgba(255,255,255,0.08)' : '1px solid transparent',
+        background: onHero
+          ? 'rgba(0,0,0,0.25)'
+          : theme.colors.navBg,
+        backdropFilter: 'blur(16px)',
+        borderBottom: onHero
+          ? '1px solid rgba(255,255,255,0.08)'
+          : `1px solid ${theme.colors.navBorder}`,
+        transition: 'all 0.3s ease',
       }}
     >
       <div
@@ -68,72 +66,119 @@ export default function Navbar() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: isMobile ? '12px 20px' : '14px 48px',
+          padding: m ? '12px 20px' : '12px 48px',
         }}
       >
-        <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
-          <img src="/Layer_1 (1) 1.png" alt="Edward Warchocki" style={{ height: isMobile ? 28 : 40, width: 'auto' }} />
+        <Link
+          to="/"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            fontSize: 18,
+            fontWeight: 700,
+            color: textColor,
+            letterSpacing: '-0.02em',
+            transition: 'color 0.3s',
+          }}
+        >
+          <Bot size={22} color={theme.colors.accent} />
+          <span>zamawiam</span><span style={{ color: theme.colors.accent }}>robota</span>
         </Link>
 
-        {/* Mobile hamburger */}
-        {isMobile ? (
+        {m ? (
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}
           >
-            <div style={{ width: 24, height: 2, background: '#fff', marginBottom: 6, transition: 'all 0.3s', transform: menuOpen ? 'rotate(45deg) translate(3px, 3px)' : 'none' }} />
-            <div style={{ width: 24, height: 2, background: '#fff', marginBottom: 6, opacity: menuOpen ? 0 : 1, transition: 'opacity 0.3s' }} />
-            <div style={{ width: 24, height: 2, background: '#fff', transition: 'all 0.3s', transform: menuOpen ? 'rotate(-45deg) translate(3px, -3px)' : 'none' }} />
+            <div style={{ width: 22, height: 2, background: hamburgerColor, marginBottom: 5, transition: 'all 0.3s', transform: menuOpen ? 'rotate(45deg) translate(3px, 3px)' : 'none' }} />
+            <div style={{ width: 22, height: 2, background: hamburgerColor, marginBottom: 5, opacity: menuOpen ? 0 : 1, transition: 'opacity 0.3s' }} />
+            <div style={{ width: 22, height: 2, background: hamburgerColor, transition: 'all 0.3s', transform: menuOpen ? 'rotate(-45deg) translate(3px, -3px)' : 'none' }} />
           </button>
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
             {navLinks.map((item) =>
-              isHome ? (
-                <a key={item.label} href={item.href} onClick={(e) => { e.preventDefault(); handleNavClick(item.href) }} style={linkStyle}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.45)')}>
+              item.href.startsWith('/#') && isHome ? (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  onClick={(e) => { e.preventDefault(); handleNavClick(item.href) }}
+                  style={{ fontSize: 14, fontWeight: 500, color: linkColor, transition: 'color 0.2s' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = linkHover)}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = linkColor)}
+                >
                   {item.label}
                 </a>
               ) : (
-                <Link key={item.label} to={item.href} style={linkStyle}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.45)')}>
+                <Link
+                  key={item.label}
+                  to={item.href}
+                  style={{ fontSize: 14, fontWeight: 500, color: linkColor, transition: 'color 0.2s' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = linkHover)}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = linkColor)}
+                >
                   {item.label}
                 </Link>
               )
             )}
-            <Link to="/wynajem-edwarda" style={{ fontSize: 13, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' as const, padding: '10px 20px', background: '#fff', color: '#000', transition: 'opacity 0.2s ease' }}
-              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.85')}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}>
-              Dogadajmy się
+            <Link
+              to="/kupuje-robota"
+              style={{
+                background: theme.colors.accent,
+                color: '#fff',
+                padding: '10px 24px',
+                borderRadius: theme.borderRadius.sm,
+                fontSize: 14,
+                fontWeight: 600,
+                transition: 'background 0.2s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = theme.colors.accentHover)}
+              onMouseLeave={(e) => (e.currentTarget.style.background = theme.colors.accent)}
+            >
+              Zamów robota
             </Link>
           </div>
         )}
       </div>
 
-      {/* Mobile menu */}
-      {isMobile && menuOpen && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
+      {m && menuOpen && (
+        <div
           style={{
             padding: '16px 20px 24px',
             display: 'flex',
             flexDirection: 'column',
-            gap: 20,
-            borderTop: '1px solid rgba(255,255,255,0.08)',
+            gap: 16,
+            borderTop: `1px solid ${theme.colors.navBorder}`,
+            background: theme.colors.navBg,
           }}
         >
           {navLinks.map((item) => (
-            <a key={item.label} href={item.href} onClick={(e) => { e.preventDefault(); handleNavClick(item.href) }} style={linkStyle}>
+            <Link
+              key={item.label}
+              to={item.href}
+              onClick={() => handleNavClick(item.href)}
+              style={{ fontSize: 16, fontWeight: 500, color: theme.colors.text, padding: '8px 0' }}
+            >
               {item.label}
-            </a>
+            </Link>
           ))}
-          <Link to="/wynajem-edwarda" onClick={() => setMenuOpen(false)} style={{ fontSize: 14, fontWeight: 600, textTransform: 'uppercase' as const, padding: '12px 20px', background: '#fff', color: '#000', textAlign: 'center' }}>
-            Dogadajmy się
+          <Link
+            to="/kupuje-robota"
+            onClick={() => setMenuOpen(false)}
+            style={{
+              background: theme.colors.accent,
+              color: '#fff',
+              padding: '12px 24px',
+              borderRadius: theme.borderRadius.sm,
+              fontSize: 15,
+              fontWeight: 600,
+              textAlign: 'center',
+            }}
+          >
+            Zamów robota
           </Link>
-        </motion.div>
+        </div>
       )}
-    </motion.nav>
+    </nav>
   )
 }

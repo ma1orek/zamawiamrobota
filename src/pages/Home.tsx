@@ -1,23 +1,29 @@
+import { useEffect } from 'react'
 import Navbar from '../components/Navbar'
-import Hero from '../components/Hero'
-import Timeline from '../components/Timeline'
-import EdekDlaKazdego from '../components/EdekDlaKazdego'
-import TikTokGallery from '../components/TikTokGallery'
-import Articles from '../components/Articles'
-import Services from '../components/Services'
+import AnimatedHero from '../components/AnimatedHero'
+import TrustBar from '../components/TrustBar'
+import RobotCatalog from '../components/RobotCatalog'
+import HowItWorks from '../components/HowItWorks'
+import TrustSection from '../components/TrustSection'
+import FAQ from '../components/FAQ'
 import Footer from '../components/Footer'
+import FloatingAgentButton from '../components/FloatingAgentButton'
+import { trackPageView } from '../utils/googleSheets'
 
 export default function Home() {
+  useEffect(() => { trackPageView('strona-glowna') }, [])
+
   return (
-    <div style={{ position: 'relative', minHeight: '100vh', background: '#000' }}>
+    <>
       <Navbar />
-      <Hero />
-      <Timeline />
-      <EdekDlaKazdego />
-      <TikTokGallery />
-      <Articles />
-      <Services />
+      <AnimatedHero />
+      <TrustBar />
+      <RobotCatalog />
+      <HowItWorks />
+      <TrustSection />
+      <FAQ />
       <Footer />
-    </div>
+      <FloatingAgentButton />
+    </>
   )
 }

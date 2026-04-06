@@ -1,36 +1,101 @@
-import SocialLinks from './SocialLinks'
-import { Link } from 'react-router-dom'
+import { Bot } from 'lucide-react'
+import { theme } from '../theme'
 import useIsMobile from '../hooks/useIsMobile'
 
 export default function Footer() {
   const m = useIsMobile()
 
   return (
-    <footer style={{ position: 'relative', padding: m ? '40px 0' : '64px 0', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-      <div style={{ maxWidth: 1400, margin: '0 auto', padding: m ? '0 20px' : '0 48px' }}>
-        <div style={{ display: 'flex', flexDirection: m ? 'column' : 'row', alignItems: m ? 'flex-start' : 'center', justifyContent: 'space-between', gap: 20, marginBottom: 24 }}>
-          <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
-            <img src="/Layer_1 (1) 1.png" alt="Edward Warchocki" style={{ height: m ? 24 : 32, width: 'auto' }} />
-          </Link>
-          <SocialLinks />
+    <footer
+      style={{
+        background: theme.colors.bgSecondary,
+        borderTop: `1px solid ${theme.colors.border}`,
+        padding: m ? '48px 20px' : '64px 48px',
+      }}
+    >
+      <div
+        style={{
+          maxWidth: theme.spacing.maxWidth,
+          margin: '0 auto',
+          display: 'flex',
+          flexDirection: m ? 'column' : 'row',
+          justifyContent: 'space-between',
+          gap: 32,
+        }}
+      >
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 18, fontWeight: 700, color: theme.colors.text, marginBottom: 8 }}>
+            <Bot size={20} color={theme.colors.accent} />
+            <span>zamawiam</span><span style={{ color: theme.colors.accent }}>robota</span>
+          </div>
+          <p style={{ fontSize: 13, color: theme.colors.textMuted, maxWidth: 300, lineHeight: 1.6 }}>
+            Porównywarka kredytów na zakup robotów humanoidalnych. Porównaj oferty z 9 banków i znajdź najlepsze finansowanie.
+          </p>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: m ? 'column' : 'row', alignItems: m ? 'flex-start' : 'center', justifyContent: 'space-between', gap: 12, paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)' }}>&copy; 2026 WARCHOCKI.PL</p>
-            <a href="https://merarobotics.com" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', transition: 'color 0.2s' }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.25)')}>
-              MERA Robotics
-            </a>
+        <div style={{ display: 'flex', gap: m ? 40 : 80 }}>
+          <div>
+            <h4 style={{ fontSize: 13, fontWeight: 600, color: theme.colors.text, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Produkt
+            </h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {['Unitree G1', 'Specyfikacja', 'Galeria'].map((item) => (
+                <span key={item} style={{ fontSize: 13, color: theme.colors.textSecondary, cursor: 'pointer' }}>
+                  {item}
+                </span>
+              ))}
+            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff', animation: 'pulse-glow 2s ease-in-out infinite' }} />
-            <span style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)' }}>
-              350 000 000+ i lecę dalej
-            </span>
+          <div>
+            <h4 style={{ fontSize: 13, fontWeight: 600, color: theme.colors.text, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Finansowanie
+            </h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {['Kalkulator', 'Porównanie ofert', 'FAQ'].map((item) => (
+                <span key={item} style={{ fontSize: 13, color: theme.colors.textSecondary, cursor: 'pointer' }}>
+                  {item}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
+      </div>
+
+      <div
+        style={{
+          maxWidth: theme.spacing.maxWidth,
+          margin: '0 auto',
+          borderTop: `1px solid ${theme.colors.border}`,
+          marginTop: 48,
+          paddingTop: 24,
+          display: 'flex',
+          flexDirection: m ? 'column' : 'row',
+          justifyContent: 'space-between',
+          gap: 16,
+        }}
+      >
+        <p style={{ fontSize: 12, color: theme.colors.textMuted }}>
+          &copy; 2026 zamawiamrobota.pl. Wszelkie prawa zastrzeżone.
+        </p>
+        <div style={{ display: 'flex', gap: 24 }}>
+          {['Regulamin', 'Polityka prywatności', 'Ustawienia prywatności'].map((item) => (
+            <span key={item} style={{ fontSize: 12, color: theme.colors.textMuted, cursor: 'pointer' }}>
+              {item}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div
+        style={{
+          maxWidth: theme.spacing.maxWidth,
+          margin: '24px auto 0',
+          fontSize: 11,
+          color: theme.colors.textMuted,
+          lineHeight: 1.6,
+        }}
+      >
+        Przedstawione informacje pokazują jedynie informacje o produktach dostępnych w poszczególnych instytucjach finansowych; nie są więc ofertą w rozumieniu art. 66 kc. Nie jesteśmy kredytodawcami, więc nie mamy wpływu na to, czy dostaniesz kredyt i na jakich warunkach — może to zależeć od wielu czynników, w tym od oceny Twojej zdolności kredytowej.
       </div>
     </footer>
   )
