@@ -5,7 +5,10 @@ import Navbar from '../components/Navbar'
 import TrustBar from '../components/TrustBar'
 import StepIndicator from '../components/StepIndicator'
 import PaymentMethodSelector from '../components/PaymentMethodSelector'
+import FinancingTabs, { type FinancingTabId } from '../components/FinancingTabs'
 import FinancingCalculator from '../components/FinancingCalculator'
+import LeaseCalculator from '../components/LeaseCalculator'
+import PartnerCard from '../components/PartnerCard'
 import CreditApplicationForm from '../components/CreditApplicationForm'
 import BankOffersResults from '../components/BankOffersResults'
 import CreditContactForm from '../components/CreditContactForm'
@@ -18,6 +21,7 @@ import useIsMobile from '../hooks/useIsMobile'
 import type { PurchaseStep, PaymentMethod, ComputedBankOffer } from '../types'
 import type { CreditFormValues } from '../utils/validation'
 import type { ContactFormValues } from '../utils/validation'
+import { partnerConfig, isPartnerConfigured } from '../config/partners'
 import {
   trackPageView,
   trackPaymentMethodSelected,
@@ -27,17 +31,19 @@ import {
   trackOfferViewed,
   trackOfferSelected,
   trackContactFormSubmitted,
+  trackEvent,
 } from '../utils/googleSheets'
 
 export default function KupujeRobota() {
   const m = useIsMobile()
   const [step, setStep] = useState<PurchaseStep>(1)
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null)
+  const [financingTab, setFinancingTab] = useState<FinancingTabId>('personal')
   const [selectedOffer, setSelectedOffer] = useState<ComputedBankOffer | null>(null)
   const [submitted, setSubmitted] = useState(false)
+  const [leaseParams, setLeaseParams] = useState<{ amount: number; months: number; buyout: number } | null>(null)
   const { params, setLoanAmount, setMonths, offers, bestOffer } = useFinancingCalculator(100000, 60)
 
-  // Track page view on mount
   useEffect(() => {
     trackPageView('kupuje-robota')
   }, [])
@@ -56,10 +62,26 @@ export default function KupujeRobota() {
     }
   }
 
+  const handleTabChange = (tab: FinancingTabId) => {
+    setFinancingTab(tab)
+    trackEvent('financing_tab_change', { tab })
+  }
+
   const handleCalcContinue = () => {
     trackCalculatorUsed(params.loanAmount, params.months, bestOffer?.monthlyPayment || 0)
-    trackFormStarted()
-    setStep(3)
+    if (financingTab === 'personal') {
+      trackFormStarted()
+      setStep(3)
+    } else {
+      // Kredyt firmowy / Leasing -> od razu oferty partnerów
+      setStep(4)
+    }
+  }
+
+  const handleLeaseContinue = (lp: { amount: number; months: number; buyout: number }) => {
+    setLeaseParams(lp)
+    trackEvent('lease_calculator_used', { kwota: lp.amount, miesiecy: lp.months, wykup: lp.buyout })
+    setStep(4)
   }
 
   const handleFormSubmit = (data: CreditFormValues) => {
@@ -84,6 +106,12 @@ export default function KupujeRobota() {
     setStep(5)
   }
 
+  const handlePartnerApply = (partnerName: string) => {
+    trackEvent('partner_apply', { partner: partnerName, tab: financingTab })
+    setSubmitted(true)
+    setStep(5)
+  }
+
   const handleContactSubmit = async (data: ContactFormValues) => {
     trackContactFormSubmitted(selectedOffer?.bank.name || '', {
       imie: data.firstName,
@@ -101,15 +129,40 @@ export default function KupujeRobota() {
     }
   }
 
-  // Track offers viewed when step 4 loads
   useEffect(() => {
-    if (step === 4 && offers.length > 0) {
+    if (step === 4 && financingTab === 'personal' && offers.length > 0) {
       trackOfferViewed(offers.length)
     }
-  }, [step, offers.length])
+  }, [step, financingTab, offers.length])
 
   const currentStep: PurchaseStep =
-    step === 5 && selectedOffer ? 5 : step === 4 ? 4 : step === 3 ? 3 : step === 2 ? 2 : 1
+    step === 5 ? 5 : step === 4 ? 4 : step === 3 ? 3 : step === 2 ? 2 : 1
+
+  const leasingPartners = [
+    {
+      key: 'leaselink' as const,
+      features: ['Online 24/7', '15 minut', 'Od 500 zł'],
+    },
+    {
+      key: 'simplylease' as const,
+      features: ['Decyzja w 5 sek', 'Siemens', 'B2B'],
+    },
+    {
+      key: 'grenke' as const,
+      features: ['Leasing sprzętu', 'Elastyczne warunki'],
+    },
+  ]
+
+  const creditPartners = [
+    {
+      key: 'santander' as const,
+      features: ['eRaty', 'Decyzja online', 'Do 200 000 zł'],
+    },
+    {
+      key: 'alior' as const,
+      features: ['Raty online', '15 minut', 'Do 300 000 zł'],
+    },
+  ]
 
   return (
     <>
@@ -120,18 +173,47 @@ export default function KupujeRobota() {
         <StepIndicator currentStep={currentStep} onStepClick={handleStepClick} />
 
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          {/* KROK 1: Wybór metody płatności */}
           {step === 1 && <PaymentMethodSelector onSelect={handlePaymentSelect} />}
 
+          {/* KROK 2: Finansowanie - Zakładki + Kalkulator */}
           {step === 2 && (
-            <FinancingCalculator
-              params={params}
-              bestOffer={bestOffer}
-              onAmountChange={setLoanAmount}
-              onMonthsChange={setMonths}
-              onContinue={handleCalcContinue}
-            />
+            <div style={{ maxWidth: 800, margin: '0 auto', padding: m ? '0 20px' : 0 }}>
+              <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                <h2 style={{ fontSize: m ? 24 : 32, fontWeight: 700, color: theme.colors.text, marginBottom: 8 }}>
+                  Wybierz rodzaj finansowania
+                </h2>
+              </div>
+
+              <FinancingTabs activeTab={financingTab} onTabChange={handleTabChange} />
+
+              {financingTab === 'personal' && (
+                <FinancingCalculator
+                  params={params}
+                  bestOffer={bestOffer}
+                  onAmountChange={setLoanAmount}
+                  onMonthsChange={setMonths}
+                  onContinue={handleCalcContinue}
+                />
+              )}
+
+              {financingTab === 'business' && (
+                <FinancingCalculator
+                  params={params}
+                  bestOffer={bestOffer}
+                  onAmountChange={setLoanAmount}
+                  onMonthsChange={setMonths}
+                  onContinue={handleCalcContinue}
+                />
+              )}
+
+              {financingTab === 'leasing' && (
+                <LeaseCalculator onContinue={handleLeaseContinue} />
+              )}
+            </div>
           )}
 
+          {/* KROK 3: Formularz (tylko dla kredytu osobistego) */}
           {step === 3 && paymentMethod === 'financing' && (
             <CreditApplicationForm
               params={params}
@@ -147,7 +229,8 @@ export default function KupujeRobota() {
             />
           )}
 
-          {step === 4 && (
+          {/* KROK 4: Oferty */}
+          {step === 4 && financingTab === 'personal' && (
             <BankOffersResults
               params={params}
               offers={offers}
@@ -157,6 +240,59 @@ export default function KupujeRobota() {
             />
           )}
 
+          {step === 4 && (financingTab === 'business') && (
+            <div style={{ maxWidth: 700, margin: '0 auto', padding: m ? '0 20px' : 0 }}>
+              <div style={{ textAlign: 'center', marginBottom: 32 }}>
+                <h2 style={{ fontSize: m ? 22 : 28, fontWeight: 700, color: theme.colors.text, marginBottom: 8 }}>
+                  Partnerzy kredytowi dla firm
+                </h2>
+                <p style={{ fontSize: 15, color: theme.colors.textSecondary }}>
+                  Wybierz partnera i złóż wniosek online
+                </p>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: m ? '1fr' : '1fr 1fr', gap: 16 }}>
+                {creditPartners.map((p) => (
+                  <PartnerCard
+                    key={p.key}
+                    name={partnerConfig[p.key].name}
+                    description={partnerConfig[p.key].description}
+                    features={p.features}
+                    configured={isPartnerConfigured(p.key)}
+                    onApply={() => handlePartnerApply(partnerConfig[p.key].name)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {step === 4 && financingTab === 'leasing' && (
+            <div style={{ maxWidth: 800, margin: '0 auto', padding: m ? '0 20px' : 0 }}>
+              <div style={{ textAlign: 'center', marginBottom: 32 }}>
+                <h2 style={{ fontSize: m ? 22 : 28, fontWeight: 700, color: theme.colors.text, marginBottom: 8 }}>
+                  Wybierz leasingodawcę
+                </h2>
+                <p style={{ fontSize: 15, color: theme.colors.textSecondary }}>
+                  {leaseParams
+                    ? `Kwota: ${leaseParams.amount.toLocaleString('pl-PL')} zł | Okres: ${leaseParams.months} mies. | Wykup: ${leaseParams.buyout}%`
+                    : 'Porównaj oferty i złóż wniosek online'}
+                </p>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: m ? '1fr' : 'repeat(3, 1fr)', gap: 16 }}>
+                {leasingPartners.map((p) => (
+                  <PartnerCard
+                    key={p.key}
+                    name={partnerConfig[p.key].name}
+                    description={partnerConfig[p.key].description}
+                    features={p.features}
+                    configured={isPartnerConfigured(p.key)}
+                    onApply={() => handlePartnerApply(partnerConfig[p.key].name)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* KROK 5: Kontakt / Potwierdzenie */}
           {step === 5 && selectedOffer && !submitted && (
             <CreditContactForm
               offer={selectedOffer}
@@ -187,7 +323,7 @@ export default function KupujeRobota() {
                 Dziękujemy!
               </h2>
               <p style={{ fontSize: 16, color: theme.colors.textSecondary, lineHeight: 1.6, marginBottom: 32 }}>
-                Twoje zgłoszenie zostało wysłane. Ekspert bankowy skontaktuje się z Tobą w ciągu 5 minut.
+                Twoje zgłoszenie zostało wysłane. Konsultant skontaktuje się z Tobą w ciągu kilku minut.
               </p>
               <a
                 href="/"
